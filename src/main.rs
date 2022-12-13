@@ -18,8 +18,12 @@ use network::NeuralNetwork;
 
 /*- Initialize -*/
 fn main() -> () {
-    let network = NeuralNetwork::new(4, &[5, 4], 2)
+    let mut network = NeuralNetwork::new(4, &[6, 5], 2)
         .set_input(&[ 1, 0, 0, 1 ]);
 
-    dbg!(network);
+    network.calculate_all_neurons();
+        
+    dbg!(&network);
+    println!("{:?}", network.get_output());
+
 }

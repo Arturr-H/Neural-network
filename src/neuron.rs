@@ -50,6 +50,21 @@ impl Neuron {
         }
         weights
     }
+
+    /*- Calculations -*/
+    pub fn calculate_inner(&mut self, prev_layer:&Layer, index_in_layer:usize) -> () {
+        let mut inner:f64 = 0.;
+        println!("{index_in_layer}");
+        /*- Iterate over neurons in prev layer -*/
+        for prev_neuron in prev_layer.neurons.iter() {
+            /*- Multiply the inner value of the neuron with the weight of the neuron
+                in the next layer -*/
+            inner += prev_neuron.weights[index_in_layer] * prev_neuron.inner;
+        }
+
+        /*- Add the bias to the inner value & return -*/
+        self.inner = inner + self.bias
+    }
 }
 
 /*- Debug impl for cleaner visualization -*/

@@ -15,6 +15,19 @@ impl Layer {
             neurons: vec![repl;count as usize]
         }
     }
+    pub fn new_hidden(next_size:&usize, count:&usize) -> Self {
+
+        /*- Create neurons -*/
+        let mut neurons:Vec<Neuron> = Vec::with_capacity(*count as usize);
+
+        /*- Create neurons -*/
+        for _ in 0..*count {
+            neurons.push(Neuron::new(*next_size)); // next size is size of next layer which will be used for the amount of weights
+        };
+
+        /*- Return -*/
+        Self { neurons }
+    }
 
     /*- Returns the size of the layer -*/
     pub fn size(&self) -> usize {
@@ -28,5 +41,14 @@ impl Layer {
             neurons.push(Neuron::specific(*input as f64, next_layer_size));
         }
         Self { neurons }
+    }
+
+    /*- Calculations -*/
+    pub fn calculate_neurons(&mut self, prev_layer:&Layer) -> () {
+
+        /*- Change neuron inner values. -*/
+        for (index, neuron) in self.neurons.iter_mut().enumerate() {
+            neuron.calculate_inner(&prev_layer, index);
+        }
     }
 }
