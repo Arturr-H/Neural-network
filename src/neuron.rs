@@ -1,4 +1,7 @@
 /*- Imports -*/
+use rand;
+
+use crate::layer::Layer;
 
 /*- The neurons contaning data such as biases, weights and
     values. Nxt is the amount of neurons in the next layer -*/
@@ -15,22 +18,49 @@ pub struct Neuron {
     pub weights: Vec<f64>,
 
     /*- Biases coupled to *this* neurons -*/
-    pub biases: f64
+    pub bias: f64
 }
 
 /*- Method implementations -*/
 impl Neuron {
     /*- Constructor -*/
-    pub fn new() -> Self {
-        Self { inner: 0., weights: Vec::new(), biases: 0. }
+    pub fn new(next_layer_size:usize) -> Self {
+        Self {
+            inner: 0.,
+            weights: Self::initialize_weights(next_layer_size),
+            bias: Self::initialize_bias()
+        }
+    }
+    pub fn specific(inner:f64, next_layer_size:usize) -> Self {
+        Self {
+            inner,
+            weights: Self::initialize_weights(next_layer_size),
+            bias: Self::initialize_bias()
+        }
+    }
+
+    /*- Initializers -*/
+    fn initialize_bias() -> f64 {
+        rand::random::<f64>() * 2. - 1.
+    }
+    fn initialize_weights(next_layer_size:usize) -> Vec<f64> {
+        let mut weights:Vec<f64> = Vec::with_capacity(next_layer_size);
+        for _ in 0..next_layer_size {
+            weights.push(rand::random::<f64>() * 2. - 1.);
+        }
+        weights
     }
 }
+
+/*- Debug impl for cleaner visualization -*/
 impl std::fmt::Debug for Neuron {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(
             format_args!(
-                "N~ |{: ^8}|{: ^8}|{: ^8}|",
-                self.inner, format!("{:?}", self.weights), self.biases
+                "Neuron( {: ^8} | {: ^8} | {: ^8} )",
+                format!("{:.3}i", self.inner),
+                format!("{:?}w", self.weights.iter().map(|x| format!("{:.3}", x).parse::<f64>().unwrap()).collect::<Vec<f64>>()),
+                format!("{:.3}b", self.bias)
             )
         )
     }

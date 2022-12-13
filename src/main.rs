@@ -8,6 +8,7 @@
 mod network;
 mod neuron;
 mod layer;
+use network::NeuralNetwork;
 
 /*- Constants -*/
 
@@ -17,7 +18,8 @@ mod layer;
 
 /*- Initialize -*/
 fn main() -> () {
-    let network = network::NeuralNetwork::new(1, &[4, 4], 2);
+    let network = NeuralNetwork::new(4, &[5, 4], 2)
+        .set_input(&[ 1, 0, 0, 1 ]);
 
     dbg!(network);
 }
