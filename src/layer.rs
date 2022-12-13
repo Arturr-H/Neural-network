@@ -1,54 +1,53 @@
 /*- Imports -*/
-use crate::neuron::Neuron;
 
 /*- Layer struct, used for storing neurons and it's main purpose is to give more functionality -*/
 #[derive(Debug, Clone)]
 pub struct Layer {
-    pub neurons: Vec<Neuron>,
+    /*- Weights -*/
+    weights: Vec<Vec<f64>>,
+
+    /*- Biases -*/
+    biases: Vec<f64>,
+
+    /*- Node count -*/
+    nodes_in: usize,
+    nodes_out: usize,
 }
 
 /*- Method implementations -*/
 impl Layer {
     /*- Constructor -*/
-    pub fn new(repl:Neuron, count:usize) -> Self {
-        Self {
-            neurons: vec![repl;count as usize]
+    pub fn new(nodes_in:usize, nodes_out:usize) -> Self {
+        Self { 
+            /*- Initialize with 0.0 -*/
+            weights: vec![vec![0.0; nodes_out]; nodes_in],
+            biases:  vec![0.0; nodes_out],
+
+            /*- Node count -*/
+            nodes_in, nodes_out
         }
     }
-    pub fn new_hidden(next_size:&usize, count:&usize) -> Self {
 
-        /*- Create neurons -*/
-        let mut neurons:Vec<Neuron> = Vec::with_capacity(*count as usize);
+    /*- Calculate output of layer -*/
+    pub fn calculate_output(&self, inputs: Vec<f64>) -> Vec<f64> {
+        let mut weighted_inputs:Vec<f64> = Vec::with_capacity(self.nodes_out);
 
-        /*- Create neurons -*/
-        for _ in 0..*count {
-            neurons.push(Neuron::new(*next_size)); // next size is size of next layer which will be used for the amount of weights
+        /*- Iterate -*/
+        for node_out in 0..self.nodes_out {
+            
+            /*- Create value -*/
+            let mut weighted_input:f64 = self.biases[node_out];
+
+            /*- Nest again -*/
+            for node_in in 0..self.nodes_in {
+                weighted_input += inputs[node_in] * self.weights[node_in][node_out];
+            };
+
+            /*- Push to end -*/
+            weighted_inputs.push(weighted_input);
         };
 
         /*- Return -*/
-        Self { neurons }
-    }
-
-    /*- Returns the size of the layer -*/
-    pub fn size(&self) -> usize {
-        self.neurons.len()
-    }
-
-    /*- Create input layer -*/
-    pub fn input(input:&[u8], next_layer_size:usize) -> Self {
-        let mut neurons:Vec<Neuron> = Vec::with_capacity(input.len());
-        for input in input {
-            neurons.push(Neuron::specific(*input as f64, next_layer_size));
-        }
-        Self { neurons }
-    }
-
-    /*- Calculations -*/
-    pub fn calculate_neurons(&mut self, prev_layer:&Layer) -> () {
-
-        /*- Change neuron inner values. -*/
-        for (index, neuron) in self.neurons.iter_mut().enumerate() {
-            neuron.calculate_inner(&prev_layer, index);
-        }
+        weighted_inputs
     }
 }
