@@ -6,9 +6,8 @@
 
 /*- Imports -*/
 mod network;
-mod neuron;
 mod layer;
-use network::NeuralNetwork;
+use network::{NeuralNetwork, load_json_data};
 
 /*- Constants -*/
 
@@ -16,5 +15,21 @@ use network::NeuralNetwork;
 
 /*- Initialize -*/
 fn main() -> () {
-    let _network = NeuralNetwork::new(&[1, 4, 6, 2]);
+    let mut network = NeuralNetwork::new(&[1, 4, 6, 2]);
+    let training_data = load_json_data();
+
+    let learn_rate = 0.1;
+
+    /*- Train -*/
+    for i in 0..100 {
+        println!("{i}");
+        network.learn(&training_data, learn_rate);
+    };
+
+    /*- Test -*/
+    let test_data = vec![1.0, 1.0, 0.0, 1.0, 1.0];
+    println!("{:?}", network.calculate_outputs(&test_data));
+
+
+    // dbg!(network);
 }

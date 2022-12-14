@@ -1,8 +1,12 @@
 /*- Imports -*/
+use crate::layer::Layer;
+use serde;
+use serde_json;
+use serde_derive::{ Serialize, Deserialize };
+use std::fs;
 
 /*- Constants -*/
-
-use crate::layer::Layer;
+const PATH_TO_JSON_DATA: &'static str = "./learning_data.json";
 
 /*- Main neural network struct -*/
 pub struct NeuralNetwork {
@@ -11,6 +15,7 @@ pub struct NeuralNetwork {
 }
 
 /*- Datapoint for storing labels and data for training -*/
+#[derive(Debug)]
 pub struct DataPoint {
     /*- Inputs -*/
     inputs: Vec<f64>,
@@ -69,16 +74,83 @@ impl NeuralNetwork {
 
         cost
     }
-    pub fn cost(&self, datapoints:&[DataPoint]) -> f64 {
+    pub fn cost(&self, datapoints:&Vec<DataPoint>) -> f64 {
         /*- Cost -*/
         let mut total_cost:f64 = f64::default();
 
         /*- Add all costs -*/
         for dp in datapoints {
-            total_cost += self.single_cost(dp);
+            total_cost += self.single_cost(&dp);
         };
 
         /*- Return avg -*/
         total_cost / datapoints.len() as f64
     }
+
+    /*- Training - run a single iteration of gradient descent -*/
+    pub fn learn(&mut self, training_data:&Vec<DataPoint>, learn_rate:f64) -> () {
+        const H:f64 = 0.0001;
+        let original_cost:f64 = self.cost(&training_data);
+
+        /*- Iterate over layers -*/
+        let mut layers:Vec<Layer> = self.layers.clone();
+        for layer in layers.iter_mut() {
+            
+            /*- Calculate cost gradients for current weights -*/
+            for node_in in 0..layer.nodes_in {
+                for node_out in 0..layer.nodes_out {
+                    layer.weights[node_in][node_out] += H;
+
+                    /*- Diffrence in current cost and original -*/
+                    let delta_cost:f64 = self.cost(&training_data) - original_cost;
+
+                    layer.weights[node_in][node_out] -= H;
+                    layer.cost_gradient_weights[node_in][node_out] = delta_cost / H;
+                };
+            };
+
+            /*- Calculate cost gradient for biases in the current layer -*/
+            for index in 0..layer.biases.len() {
+                layer.biases[index] += H;
+
+                /*- Diffrence in current cost and original -*/
+                let delta_cost:f64 = self.cost(&training_data) - original_cost;
+
+                layer.biases[index] -= H;
+                layer.cost_gradient_biases[index] = delta_cost / H;
+            };
+        };
+
+        // TODO THIS MIGHT BE CAUSE OF BREAK
+        self.layers = layers;
+        self.apply_all_gradients(learn_rate);
+    }
+
+    /*- Simply loops through all layers and applies their gradients -*/
+    pub fn apply_all_gradients(&mut self, learn_rate:f64) -> () {
+        for layer in self.layers.iter_mut() {
+            layer.apply_gradients(learn_rate);
+        };
+    }
+}
+
+/*- Load training data -*/
+#[derive(Deserialize)]
+struct JsonLoad { learning_data:Vec<Vec<Vec<f64>>> }
+pub fn load_json_data() -> Vec<DataPoint> {
+    let file = fs::read_to_string(PATH_TO_JSON_DATA).expect("Unable to read file");
+    let json:JsonLoad = serde_json::from_str(&file).expect("Unable to parse json");
+    let mut datapoints:Vec<DataPoint> = Vec::with_capacity(json.learning_data.len());
+
+    /*- Iterate over all data points -*/
+    for data_point in json.learning_data {
+        let inputs = &data_point[0];
+        let expected_outputs = &data_point[1];
+
+        /*- Create datapoint -*/
+        let dp = DataPoint { inputs: inputs.clone(), expected_outputs: expected_outputs.clone() };
+        datapoints.push(dp);
+    };
+
+    datapoints
 }
