@@ -50,3 +50,12 @@ The function body begins with creating a variable to store all layers (initializ
 ::with_capacity() function). Then he iterates over 0..size_of_that_array with an index. Inside
 of the for-loop body he pushes a new layer constructed with the two parameters: layer_sizes[index], 
 layer_sizes[index + 1] And I guess he then sets the inner value of the network structure (layers).
+
+### Calculate output function
+It's a pretty small function, but I'll still talk about it. All it does is that it calculates the output
+of the neural network depending on the input values. It does that by first taking mut inputs as a Vector
+of f64:s, (the parameter itself has to be mutable). Then the function will iterate over all layers, and
+for each iteration set the input value (which we set to mutable) to be the calculation of the current layer
+in the current iteration. Like so:
+inputs = layer.calculate_outputs(inputs);
+And then we finally return inputs.

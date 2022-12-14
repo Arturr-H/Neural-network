@@ -30,7 +30,7 @@ impl Layer {
 
     /*- Calculate output of layer -*/
     pub fn calculate_output(&self, inputs: Vec<f64>) -> Vec<f64> {
-        let mut weighted_inputs:Vec<f64> = Vec::with_capacity(self.nodes_out);
+        let mut activations:Vec<f64> = Vec::with_capacity(self.nodes_out);
 
         /*- Iterate -*/
         for node_out in 0..self.nodes_out {
@@ -44,10 +44,20 @@ impl Layer {
             };
 
             /*- Push to end -*/
-            weighted_inputs.push(weighted_input);
+            activations.push(Self::sigmoid(weighted_input));
         };
 
         /*- Return -*/
-        weighted_inputs
+        activations
+    }
+
+    /*- Activation function -*/
+    pub fn sigmoid(input:f64) -> f64 {
+        1.0 / (1.0 + (-input).exp())
+    }
+
+    /*- Node cost function -*/
+    pub fn node_cost(&self, output_activation:f64, expected_output:f64) -> f64 {
+        (output_activation - expected_output).powi(2) / 2.0
     }
 }
