@@ -85,8 +85,11 @@ impl Layer {
     }
 
     /*- Node cost function -*/
-    pub fn node_cost(&self, output_activation:f64, expected_output:f64) -> f64 {
+    pub fn node_cost(output_activation:f64, expected_output:f64) -> f64 {
         (output_activation - expected_output).powi(2) / 2.0
+    }
+    pub fn node_cost_derivative(output_activation:f64, expected_output:f64) -> f64 {
+        output_activation - expected_output
     }
 
     /*- Apply gradients by using gradient descent. Update weights and biases -*/
@@ -104,4 +107,17 @@ impl Layer {
             };
         };
     }
+    // pub fn calculate_output_layer_node_values(&self, expected:Vec<f64>) -> Vec<f64> {
+    //     let node_values:Vec<f64> = Vec::with_capacity(expected.len());
+
+    //     /*- Iterate -*/
+    //     for i in 0..node_values.len() {
+    //         let cost_derivative = Self::node_cost_derivative(self., expected[i]);
+    //         let activation_derivative = output_activation * (1.0 - output_activation);
+        
+    //         node_values.push(cost_derivative * activation_derivative);
+    //     };
+
+    //     node_values
+    // }
 }

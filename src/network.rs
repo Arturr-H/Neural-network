@@ -6,9 +6,10 @@ use serde_derive::{ Serialize, Deserialize };
 use std::fs;
 
 /*- Constants -*/
-const PATH_TO_JSON_DATA: &'static str = "./learning_data.json";
+
 
 /*- Main neural network struct -*/
+#[derive(Clone)]
 pub struct NeuralNetwork {
     /*- All layers -*/
     layers: Vec<Layer>,
@@ -17,11 +18,28 @@ pub struct NeuralNetwork {
 /*- Datapoint for storing labels and data for training -*/
 #[derive(Debug)]
 pub struct DataPoint {
-    /*- Inputs -*/
-    inputs: Vec<f64>,
+    /// The inputs to the layer, aka the data
+    pub data: Vec<f64>,
 
-    /*- What we want the network to output -*/
-    expected_outputs: Vec<f64>,
+    /// The expected outputs of the layer, aka the labels
+    pub labels: Vec<f64>,
+}
+impl DataPoint {
+    pub fn from(data: &Vec<Vec<f64>>, labels: &Vec<Vec<f64>>) -> Vec<Self> {
+        let mut datapoints:Vec<Self> = Vec::with_capacity(data.len());
+
+        /*- Iterate -*/
+        for i in 0..data.len() {
+            datapoints.push(
+                Self {
+                    data: data[i].to_vec(),
+                    labels: labels[i].to_vec()
+                }
+            );
+        };
+
+        datapoints
+    }
 }
 
 /*- Method implementations -*/
@@ -61,15 +79,15 @@ impl NeuralNetwork {
 
     /*- Cost function -*/
     pub fn single_cost(&self, datapoint:&DataPoint) -> f64 {
-        let outputs:Vec<f64> = self.calculate_outputs(&datapoint.inputs);
-        let output_layer = self.get_output_layer();
+        let outputs:Vec<f64> = self.calculate_outputs(&datapoint.data);
+        let _output_layer = self.get_output_layer();
 
         /*- The cost for this datapoint -*/
         let mut cost:f64 = 0.0;
 
         /*- Iterate -*/
         for node_out in 0..outputs.len() {
-            cost += output_layer.node_cost(outputs[node_out], datapoint.expected_outputs[node_out]);
+            cost += Layer::node_cost(outputs[node_out], datapoint.labels[node_out]);
         };
 
         cost
@@ -91,38 +109,45 @@ impl NeuralNetwork {
     pub fn learn(&mut self, training_data:&Vec<DataPoint>, learn_rate:f64) -> () {
         const H:f64 = 0.0001;
         let original_cost:f64 = self.cost(&training_data);
+        println!("cost: {original_cost}");
 
         /*- Iterate over layers -*/
-        let mut layers:Vec<Layer> = self.layers.clone();
-        for layer in layers.iter_mut() {
-            
+        let mut layer_index = 0;
+        for layer in self.layers.clone() {
             /*- Calculate cost gradients for current weights -*/
             for node_in in 0..layer.nodes_in {
                 for node_out in 0..layer.nodes_out {
-                    layer.weights[node_in][node_out] += H;
+                    /*
+                        I'll explain the H constant now, it basically changes a specific weight by a
+                        very very little amount, and runs the output with that little change on that
+                        one weight. After we got a result, we compare that to the cost without that
+                        delta change and see if it got any closer to the expected values.
+                    */
+                    self.layers[layer_index].weights[node_in][node_out] += H;
 
                     /*- Diffrence in current cost and original -*/
                     let delta_cost:f64 = self.cost(&training_data) - original_cost;
 
-                    layer.weights[node_in][node_out] -= H;
-                    layer.cost_gradient_weights[node_in][node_out] = delta_cost / H;
+                    self.layers[layer_index].weights[node_in][node_out] -= H;
+                    self.layers[layer_index].cost_gradient_weights[node_in][node_out] = delta_cost / H;
                 };
             };
 
             /*- Calculate cost gradient for biases in the current layer -*/
             for index in 0..layer.biases.len() {
-                layer.biases[index] += H;
+                self.layers[layer_index].biases[index] += H;
 
                 /*- Diffrence in current cost and original -*/
                 let delta_cost:f64 = self.cost(&training_data) - original_cost;
 
-                layer.biases[index] -= H;
-                layer.cost_gradient_biases[index] = delta_cost / H;
+                self.layers[layer_index].biases[index] -= H;
+                self.layers[layer_index].cost_gradient_biases[index] = delta_cost / H;
             };
+
+            /*- Increment layer index -*/
+            layer_index += 1;
         };
 
-        // TODO THIS MIGHT BE CAUSE OF BREAK
-        self.layers = layers;
         self.apply_all_gradients(learn_rate);
     }
 
@@ -132,25 +157,16 @@ impl NeuralNetwork {
             layer.apply_gradients(learn_rate);
         };
     }
+    // pub fn update_all_gradiends(&mut self, datapoint: DataPoint) -> () {
+    //     self.calculate_outputs(&datapoint.data);
+
+    //     let output_layer:&Layer = self.get_output_layer();
+    //     let node_values:Vec<f64> = output_layer.calculate_output_layer_node_values(datapoint.labels);
+    // }
 }
 
-/*- Load training data -*/
-#[derive(Deserialize)]
-struct JsonLoad { learning_data:Vec<Vec<Vec<f64>>> }
-pub fn load_json_data() -> Vec<DataPoint> {
-    let file = fs::read_to_string(PATH_TO_JSON_DATA).expect("Unable to read file");
-    let json:JsonLoad = serde_json::from_str(&file).expect("Unable to parse json");
-    let mut datapoints:Vec<DataPoint> = Vec::with_capacity(json.learning_data.len());
 
-    /*- Iterate over all data points -*/
-    for data_point in json.learning_data {
-        let inputs = &data_point[0];
-        let expected_outputs = &data_point[1];
-
-        /*- Create datapoint -*/
-        let dp = DataPoint { inputs: inputs.clone(), expected_outputs: expected_outputs.clone() };
-        datapoints.push(dp);
-    };
-
-    datapoints
-}
+// Imagine that I have a struct in rust, called MyStruct that has a field named items, that struct also has a method that looks something like this: 
+// impl MyStruct { pub fn do_something(&self) -> i32 { 5 } }
+// How do i mutably iterate through the items (using .iter_mut()) in the items field and call the do_something method inside of the iterator?
+// When I try to do this the compiler says that I can't borrow self as mutable (iter_mut) whilst also using it immutably (do_something)

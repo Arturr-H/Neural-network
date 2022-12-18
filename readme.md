@@ -59,3 +59,7 @@ for each iteration set the input value (which we set to mutable) to be the calcu
 in the current iteration. Like so:
 inputs = layer.calculate_outputs(inputs);
 And then we finally return inputs.
+
+# Ways to improve performance
+
+Probably to handle all datapoints in parallell.
